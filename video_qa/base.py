@@ -31,7 +31,7 @@ MODELS = {
         'load_func': llava_onevision_rekv.load_model,
         'model_class': LlavaOnevisionForConditionalGeneration,
         'processor_class': LlavaOnevisionProcessor,
-        'model_path': 'model_zoo/llava-onevision-qwen2-7b-ov-hf',
+        'model_path': '/data1/VIDEO_HALLUCINATION/hf_cache/hub/models--llava-hf--llava-onevision-qwen2-7b-ov-hf/snapshots/0d50680527681998e456c7b78950205bedd8a068',
     },
     'llava_ov_72b': {
         'load_func': llava_onevision_rekv.load_model,

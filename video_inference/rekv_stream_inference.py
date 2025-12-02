@@ -67,4 +67,4 @@ class ReKVStreamInference(BaseInference):
  
 
 if __name__ == "__main__":
-    work(ReKVStreamVQA)
+    work(ReKVStreamInference)

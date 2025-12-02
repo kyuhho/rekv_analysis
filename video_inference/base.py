@@ -17,38 +17,39 @@ from transformers import (
 import logzero
 from logzero import logger
 
-from model import llava_onevision_rekv, video_llava_rekv, longva_rekv
+from model import llava_onevision_rekv
+# from model import video_llava_rekv, longva_rekv
 
 
 MODELS = {
-    'llava_ov_0.5b': {
-        'load_func': llava_onevision_rekv.load_model,
-        'model_class': LlavaOnevisionForConditionalGeneration,
-        'processor_class': LlavaOnevisionProcessor,
-        'model_path': 'model_zoo/llava-onevision-qwen2-0.5b-ov-hf',
-    },
+    # 'llava_ov_0.5b': {
+    #     'load_func': llava_onevision_rekv.load_model,
+    #     'model_class': LlavaOnevisionForConditionalGeneration,
+    #     'processor_class': LlavaOnevisionProcessor,
+    #     'model_path': 'model_zoo/llava-onevision-qwen2-0.5b-ov-hf',
+    # },
     'llava_ov_7b': {
         'load_func': llava_onevision_rekv.load_model,
         'model_class': LlavaOnevisionForConditionalGeneration,
         'processor_class': LlavaOnevisionProcessor,
-        'model_path': 'model_zoo/llava-onevision-qwen2-7b-ov-hf',
+        'model_path': '/data1/VIDEO_HALLUCINATION/hf_cache/hub/models--llava-hf--llava-onevision-qwen2-7b-ov-hf/snapshots/0d50680527681998e456c7b78950205bedd8a068',
     },
-    'llava_ov_72b': {
-        'load_func': llava_onevision_rekv.load_model,
-        'model_class': LlavaOnevisionForConditionalGeneration,
-        'processor_class': LlavaOnevisionProcessor,
-        'model_path': 'model_zoo/llava-onevision-qwen2-72b-ov-hf',
-    },
-    'video_llava_7b': {
-        'load_func': video_llava_rekv.load_model,
-        'model_class': VideoLlavaForConditionalGeneration,
-        'processor_class': VideoLlavaProcessor,
-        'model_path': 'model_zoo/Video-LLaVA-7B-hf',
-    },
-    'longva_7b': {
-        'load_func': longva_rekv.load_model,
-        'model_path': 'model_zoo/LongVA-7B',
-    },
+    # 'llava_ov_72b': {
+    #     'load_func': llava_onevision_rekv.load_model,
+    #     'model_class': LlavaOnevisionForConditionalGeneration,
+    #     'processor_class': LlavaOnevisionProcessor,
+    #     'model_path': 'model_zoo/llava-onevision-qwen2-72b-ov-hf',
+    # },
+    # 'video_llava_7b': {
+    #     'load_func': video_llava_rekv.load_model,
+    #     'model_class': VideoLlavaForConditionalGeneration,
+    #     'processor_class': VideoLlavaProcessor,
+    #     'model_path': 'model_zoo/Video-LLaVA-7B-hf',
+    # },
+    # 'longva_7b': {
+    #     'load_func': longva_rekv.load_model,
+    #     'model_path': 'model_zoo/LongVA-7B',
+    # },
 }
 
 
@@ -68,16 +69,16 @@ class BaseInference:
         self.retrieve_size = retrieve_size
         self.chunk_size = chunk_size
 
-        self.num_chunks = num_chunks
-        self.chunk_idx = chunk_idx
-        if num_chunks is not None:
-            anno = self.get_chunk(anno, num_chunks, chunk_idx)
+        # self.num_chunks = num_chunks
+        # self.chunk_idx = chunk_idx
+        # if num_chunks is not None:
+        #     anno = self.get_chunk(anno, num_chunks, chunk_idx)
         
         # self.eval_grounding = 'temporal_windows' in anno[0]['conversations'][0]
 
-        self.save_dir = save_dir
+        # self.save_dir = save_dir
         # self.choice_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-        self.record = {(self.retrieve_size, self.chunk_size): []}
+        # self.record = {(self.retrieve_size, self.chunk_size): []}
 
     def split_list(self, lst, n):
         """Split a list into n (roughly) equal-sized chunks"""
@@ -117,21 +118,22 @@ class BaseInference:
         final_df.to_csv(f'{self.save_dir}/{self.num_chunks}_{self.chunk_idx}.csv', index=False)
 
 
-# def str2bool(value):
-#     if isinstance(value, bool):
-#         return value
-#     if value.lower() in ('true', '1', 'yes'):
-#         return True
-#     elif value.lower() in ('false', '0', 'no'):
-#         return False
-#     else:
-#         raise argparse.ArgumentTypeError('Boolean value expected.')
+def str2bool(value):
+    if isinstance(value, bool):
+        return value
+    if value.lower() in ('true', '1', 'yes'):
+        return True
+    elif value.lower() in ('false', '0', 'no'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def work(INFERENCE_CLASS):
     logging.set_verbosity_error()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample_fps", type=float, default=1)
+    parser.add_argument("--video_path", type=str, required=True)
     # parser.add_argument("--num_chunks", type=int, default=1)
     # parser.add_argument("--chunk_idx", type=int, default=0)
     # parser.add_argument("--save_dir", type=str, required=True)
