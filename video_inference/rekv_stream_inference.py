@@ -67,5 +67,4 @@ class ReKVStreamInference(BaseInference):
  
 
 if __name__ == "__main__":
-    # FIXME: test commit
     work(ReKVStreamInference)
