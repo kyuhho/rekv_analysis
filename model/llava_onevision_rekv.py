@@ -137,6 +137,15 @@ def load_model(model_path='model_zoo/LLaVA/llava-onevision-qwen2-7b-ov-hf',
         topk=topk,
         chunk_size=chunk_size,
     )
+
+    # 3:1 budget allocation
+    num_layers = model.language_model.config.num_hidden_layers
+    mid_layer = num_layers // 2
+    topk_high = int(topk * 1.5)
+    topk_low = int(topk * 0.5)
+    topk_list = [topk_high] * mid_layer + [topk_low] * (num_layers - mid_layer)
+    inf_llm_config['topk'] = topk_list
+
     model.language_model = patch_hf(model.language_model, **inf_llm_config)
     
     for k, v in inf_llm_config.items():

@@ -165,12 +165,28 @@ def patch_hf(
     )
     model.model.position_bias = rope
 
-    def set_forward(m):
-        if isinstance(m, Attention):
-            m._old_forward = m.forward
-            m.forward = forward.__get__(m, Attention)
+    layers = model.model.layers
+    topk = attn_kwargs.get('topk')
 
-    model.apply(set_forward)
+    if isinstance(topk, list):
+        assert len(topk) == len(layers)
+        for i, layer in enumerate(layers):
+            kwargs_i = attn_kwargs.copy()
+            kwargs_i['topk'] = topk[i]
+            forward_i = huggingface_forward(rekv_attention_forward(**kwargs_i))
+            
+            m = layer.self_attn
+            m._old_forward = m.forward
+            m.forward = forward_i.__get__(m, Attention)
+    else:
+        forward = huggingface_forward(rekv_attention_forward(**attn_kwargs))
+
+        def set_forward(m):
+            if isinstance(m, Attention):
+                m._old_forward = m.forward
+                m.forward = forward.__get__(m, Attention)
+
+        model.apply(set_forward)
 
     model.model._old_forward = model.model.forward
     model.model.forward = model_forward.__get__(model.model, Model)
