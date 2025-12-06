@@ -12,9 +12,15 @@ def exec(cmd, sub=False, device=None):
         os.system(cmd)
     else:
         my_env = os.environ.copy()
-        my_env["CUDA_VISIBLE_DEVICES"] = device
+        main_cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+        
+        if main_cuda_visible and device and ',' not in str(device):
+            pass
+        else:
+            # llava_ov_72b
+            my_env["CUDA_VISIBLE_DEVICES"] = device
+        
         subprocess.run(cmd, env=my_env)
-
 
 def eval_mlvu(args):
     num_chunks = args.num_chunks
@@ -271,6 +277,18 @@ if __name__ == "__main__":
         'rvs_movie': eval_rvs_movie,
         'cgbench': eval_cgbench,
     }
+
+    cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cuda_visible:
+        gpu_cnt = len([gpu for gpu in cuda_visible.split(',') if gpu.strip()])
+        if gpu_cnt != args.num_chunks:
+            raise ValueError(f"CUDA_VISIBLE_DEVICES has {gpu_cnt} GPUs, but {args.num_chunks} are required")
+    else:
+        print(f"Warning: CUDA_VISIBLE_DEVICES is not set. Using default GPU allocation.")
+
+
     if args.dataset in func_dic:
         print(f'Execute {args.dataset} evaluation')
         func_dic[args.dataset](args)
+
+# CUDA_VISIBLE_DEVICES=2 python video_qa/run_eval.py --dataset rvs_movie
