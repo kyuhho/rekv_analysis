@@ -131,7 +131,7 @@ def patch_hf(
             attentions=all_self_attns,
         )
 
-    forward = huggingface_forward(rekv_attention_forward(**attn_kwargs))
+    # model.apply(set_forward)
 
     if isinstance(model, LlamaForCausalLM):
         Attention = model.model.layers[0].self_attn.__class__
@@ -164,13 +164,30 @@ def patch_hf(
         distance_scale
     )
     model.model.position_bias = rope
+    
+    layers = model.model.layers
 
-    def set_forward(m):
+    print(f'[INFO] layers type: {type(layers)}')
+    print(f'[INFO] layers[0] type: {type(layers[0])}')
+
+    topk_list = attn_kwargs.get('topk')
+
+    if not isinstance(topk_list, list):
+        topk_list = [topk_list] * len(layers)
+    
+    if len(topk_list) != len(layers):
+        raise ValueError(f"Length of topk list ({len(topk_list)}) must match number of layers ({len(layers)})")
+    print(f'attn_kwargs: {attn_kwargs}')
+    for i, layer in enumerate(layers):
+        layer_kwargs = attn_kwargs.copy()
+        layer_kwargs['topk'] = topk_list[i]
+        
+        layer_forward = huggingface_forward(rekv_attention_forward(**layer_kwargs))
+        
+        m = layer.self_attn
         if isinstance(m, Attention):
             m._old_forward = m.forward
-            m.forward = forward.__get__(m, Attention)
-
-    model.apply(set_forward)
+            m.forward = layer_forward.__get__(m, Attention)
 
     model.model._old_forward = model.model.forward
     model.model.forward = model_forward.__get__(model.model, Model)

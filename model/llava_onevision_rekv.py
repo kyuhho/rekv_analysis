@@ -137,6 +137,20 @@ def load_model(model_path='model_zoo/LLaVA/llava-onevision-qwen2-7b-ov-hf',
         topk=topk,
         chunk_size=chunk_size,
     )
+
+    if isinstance(topk, int):
+        # topk = [topk] * model.language_model.config.num_hidden_layers
+        # Implement 2:1 budget allocation (80 for lower half, 48 for upper half)
+        num_layers = model.language_model.config.num_hidden_layers
+        half_layers = num_layers // 2
+        
+        # Lower layers get 80, Upper layers get 48
+        # Average is (80 + 48) / 2 = 64
+        topk = [80] * half_layers + [48] * (num_layers - half_layers)
+        
+        logger.info(f"Applied 2:1 budget allocation: Lower {half_layers} layers = 80, Upper {num_layers - half_layers} layers = 48")
+
+    inf_llm_config['topk'] = topk
     model.language_model = patch_hf(model.language_model, **inf_llm_config)
     
     for k, v in inf_llm_config.items():
