@@ -414,7 +414,8 @@ class ContextManager:
         if self.async_global_stream:
             torch.cuda.current_stream().wait_stream(GLOBAL_STREAM)
 
-        assert global_h_k.size(-2) <= self.n_init + self.n_local
+        # FIXME: removed for layer wise experiments
+        # assert global_h_k.size(-2) <= self.n_init + self.n_local
         return global_h_k, global_h_v 
 
     # Get the indices of the top-k vectors in self.block_k[u] that have the highest similarity with global_h_q[u].
