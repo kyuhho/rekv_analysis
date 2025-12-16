@@ -26,7 +26,7 @@ def calc_average_metric(results, save_dir, metric, vmin=None, vmax=None):
         df.columns = ['retrieve_size', 'chunk_size', 'value']
         heatmap_data = df.pivot(index='chunk_size', columns='retrieve_size', values='value')
         plt.figure(figsize=(10, 8))
-        ax = sns.heatmap(heatmap_data, annot=True, fmt=".1f", cmap="RdPu", cbar_kws={'label': 'Value'}, 
+        ax = sns.heatmap(heatmap_data, annot=True, fmt=".4f", cmap="RdPu", cbar_kws={'label': 'Value'}, 
                         xticklabels=True, yticklabels=True, vmin=vmin, vmax=vmax)
         ax.invert_yaxis()
         plt.title(f'Heatmap of Average {metric.capitalize()}')
