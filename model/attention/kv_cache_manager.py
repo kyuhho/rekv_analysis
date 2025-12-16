@@ -379,12 +379,13 @@ class ContextManager:
                 # load retrieved context KV
                 for u in range(self.num_units):
                     # assert len(self.retrieved_block_indices[u]) == block_num
-                    assert self.retrieved_block_indices[u][-1] < self.num_global_block, f'{self.retrieved_block_indices[u][-1]}, {self.num_global_block}'
-                    for cnt, b_idx in enumerate(self.retrieved_block_indices[u]):
-                        # load global_blocks[u][b_idx] onto GPU and make a copy to (global_h_k, global_h_v)
-                        st = init_ed + cnt * self.block_size
-                        ed = st + self.block_size
-                        self.global_blocks[u][b_idx].load((global_h_k[u, :, st:ed, :], global_h_v[u, :, st:ed, :]))
+                    if len(self.retrieved_block_indices[u]) > 0:
+                        assert self.retrieved_block_indices[u][-1] < self.num_global_block, f'{self.retrieved_block_indices[u][-1]}, {self.num_global_block}'
+                        for cnt, b_idx in enumerate(self.retrieved_block_indices[u]):
+                            # load global_blocks[u][b_idx] onto GPU and make a copy to (global_h_k, global_h_v)
+                            st = init_ed + cnt * self.block_size
+                            ed = st + self.block_size
+                            self.global_blocks[u][b_idx].load((global_h_k[u, :, st:ed, :], global_h_v[u, :, st:ed, :]))
 
             else:  # init KV and context are in self.global_remainder
                 # load init KV
@@ -423,6 +424,10 @@ class ContextManager:
     def _calc_block_topk(
         self, global_h_q
     ):
+        # Handle topk=0 case: return empty lists for all units
+        if self.topk == 0:
+            return [[] for _ in range(self.num_units)]
+        
         global_h_q = global_h_q.mean(dim=2, keepdim=False)  # (batch_size, num_heads, dim_head)
         assert global_h_q.shape == (self.num_units, self.unit_size, self.dim_head)
         global_h_q = global_h_q.reshape(self.num_units, self.dim_head * self.unit_size)  # (batch_size, dim_head * num_heads)
