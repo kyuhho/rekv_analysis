@@ -24,7 +24,7 @@ def exec(cmd, sub=False, device=None):
 
 def eval_mlvu(args):
     num_chunks = args.num_chunks
-    save_dir = f"results/{args.model}/mlvu/{args.retrieve_size}-{args.sample_fps}"
+    save_dir = f"results/{args.model}/mlvu/{args.retrieve_size}-{args.sample_fps}-dropped"
     solver = "rekv_offline_vqa"
     if not args.only_eval:
         # QA
@@ -36,7 +36,7 @@ def eval_mlvu(args):
                     "--n_local", str(args.n_local),
                     "--retrieve_size", str(args.retrieve_size),
                     "--save_dir", save_dir,
-                    "--anno_path", "data/mlvu/dev_debug_mc.json",
+                    "--anno_path", "data/mlvu/metadata.json",
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default=None, choices=['mlvu', 'qaego4d', 'egoschema', 'activitynet_qa', 'rvs_ego', 'rvs_movie', 'cgbench'])
     parser.add_argument("--num_chunks", type=int, default=1)
     parser.add_argument("--only_eval", action="store_true")
-    parser.add_argument("--sample_fps", type=float, default=1)
+    parser.add_argument("--sample_fps", type=float, default=0.5)
     parser.add_argument("--n_local", type=int, default=15000)
     parser.add_argument("--retrieve_size", type=int, default=64)
     parser.add_argument("--debug", type=str, default='false')
