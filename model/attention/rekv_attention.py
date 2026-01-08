@@ -126,8 +126,13 @@ def rekv_attention_forward(
             """ 6. Sliding Window Attention """
             attn = Attn(local_h_q.shape, local_h_q.dtype, local_h_q.device)
             attn.append(local_h_q, local_h_k, local_h_v, sliding_window=n_local)
-            attn.append(init_h_q, init_h_k, init_h_v, end=True, sliding_window=(len_k - len_q, n_local), complement_sliding_window=True)
-            score, _ = attn.get_result()
+            attn.append(init_h_q, init_h_k, init_h_v, end=True, sliding_window=(len_k - len_q, n_local), complement_sliding_window=True, get_score=True)
+            score, scores = attn.get_result()
+
+            if type(past_key_value) is ContextManager:
+                # scores[-1] is the attention weight for the retrieved blocks (init_h_k)
+                # shape: (batch_size, num_heads, kv_len)
+                past_key_value.last_attn_scores = scores[-1]
 
             score = score.view(batch_size, num_heads, len_q, dim_head).permute(0, 2, 1, 3) # (batch, len_q, num_heads, dim_head)
             score = score.reshape(batch_size, len_q, num_heads * dim_head) # (batch, len_q, num_heads * dim_head)

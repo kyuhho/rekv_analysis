@@ -63,8 +63,11 @@ class LlavaOneVision_ReKV(LlavaOnevisionForConditionalGeneration, Abstract_ReKV)
                 self.last_retrieval_info = []
             self.last_retrieval_info.append({
                 'similarity': layer_kv.similarity.detach().cpu() if layer_kv.similarity is not None else None,
-                'indices': layer_kv.retrieved_block_indices
+                'indices': layer_kv.retrieved_block_indices,
+                'attn_scores': layer_kv.last_attn_scores.detach().cpu() if hasattr(layer_kv, 'last_attn_scores') and layer_kv.last_attn_scores is not None else None
             })
+            if hasattr(layer_kv, 'last_attn_scores'):
+                layer_kv.last_attn_scores = None
             layer_kv.reset_retrieval()
 
         for i in range(max_new_tokens):

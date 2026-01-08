@@ -7,20 +7,17 @@ import hashlib
 
 def visualize_retrieval_attention(model, save_path="retrieval_attention.png", title="Retrieval Attention Heatmap"):
     """
-    Visualizes the retrieval similarity scores across all layers and blocks.
+    Visualizes the ACTUAL attention scores used during inference.
     Y-axis: Layers
     X-axis: Blocks (Frames)
-    Values: Similarity scores for retrieved blocks, 0 (masked/white) for others.
+    Values: Softmax attention scores sum per block.
     """
     if not hasattr(model, 'last_retrieval_info') or not model.last_retrieval_info:
         return
 
-    # Matrix size: [Layers, Total number of blocks]
     num_layers = len(model.last_retrieval_info)
-    
     kv_cache = model.kv_cache
-    if kv_cache is None:
-        return
+    if kv_cache is None: return
         
     sample_cm = kv_cache[0]
     total_blocks = sample_cm.num_global_block if hasattr(sample_cm, "num_global_block") else 0
@@ -28,50 +25,60 @@ def visualize_retrieval_attention(model, save_path="retrieval_attention.png", ti
         total_blocks = len(sample_cm.global_blocks[0]) if sample_cm.global_blocks and len(sample_cm.global_blocks) > 0 else 0
 
     if total_blocks == 0:
-        # Fallback: find maximum index in retrieved indices
         max_idx = 0
         for info in model.last_retrieval_info:
-            if info['indices']:
-                max_idx = max(max_idx, max(info['indices'][0]))
+            if info['indices']: max_idx = max(max_idx, max(info['indices'][0]))
         total_blocks = max_idx + 1
 
     attn_matrix = np.zeros((num_layers, total_blocks))
+    n_init = sample_cm.n_init
+    block_size = sample_cm.block_size
 
     for i, info in enumerate(model.last_retrieval_info):
-        sims = info['similarity'] # [batch_size, num_blocks]
-        indices = info['indices'] # [batch_size, topk]
+        # attn_scores: (batch_size, num_heads, kv_len)
+        scores = info['attn_scores']
+        indices = info['indices']
         
-        if sims is not None and indices is not None:
+        if scores is not None and indices is not None:
             batch_idx = 0
-            sims_np = sims[batch_idx].numpy()
+            # Sum across all heads and all query tokens (input_len)
+            # info['attn_scores'] already comes from tmp.sum(dim=-2) in rekv_attention.py
+            # which is (batch, heads, kv_len)
+            
+            # Sum across heads to get (kv_len,)
+            token_scores = scores[batch_idx].sum(dim=0).numpy()
+            
+            # The structure of keys in init_h_k is [init_keys (n_init), retrieved_keys (topk * block_size)]
+            retrieved_scores = token_scores[n_init:]
             indices_list = indices[batch_idx]
             
-            # Fill selected ones, others stay 0
-            for idx in indices_list:
-                if idx < total_blocks:
-                    attn_matrix[i, idx] = sims_np[idx]
+            # Map token-level scores back to blocks
+            for b_cnt, real_block_idx in enumerate(indices_list):
+                if real_block_idx < total_blocks:
+                    st = b_cnt * block_size
+                    ed = st + block_size
+                    if ed <= len(retrieved_scores):
+                        # Sum attention scores within the block
+                        attn_matrix[i, real_block_idx] = retrieved_scores[st:ed].sum()
 
     # 2. Plotting
     plt.figure(figsize=(24, 8))
-    
-    # Mask values that are 0 so they appear white (background color)
     mask = (attn_matrix == 0)
     
+    # Use a per-layer normalization for better visibility if needed, 
+    # but here we show absolute attention weights across layers.
     ax = sns.heatmap(attn_matrix, 
                      mask=mask, 
                      cmap="YlGnBu", 
-                     cbar_kws={'label': 'Retrieval Similarity'},
+                     cbar_kws={'label': 'Total Attention Weight'},
                      linewidths=0, 
                      linecolor='white')
     
-    # Set background color to white for masked values
     ax.set_facecolor('white')
-    
     plt.xlabel("Video Block / Frame Index")
-    plt.ylabel("Layer Index")
+    plt.ylabel("Layer Index (0=Bottom, Top=Last)")
     plt.title(title, fontsize=12)
     
-    # Improve y-axis ticks
     plt.yticks(np.arange(num_layers) + 0.5, np.arange(num_layers))
     
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -80,16 +87,11 @@ def visualize_retrieval_attention(model, save_path="retrieval_attention.png", ti
     print(f"Visualization saved to {save_path}")
 
 def wrap_and_visualize(vqa_instance, video_id, question, q_idx=0, output_dir="results/visuals"):
-    """
-    Helper function to be called inside analyze_a_video
-    """
     model = vqa_instance.qa_model
-    # Clean up video_id and question for filename
     clean_video_id = str(video_id).split('/')[-1].replace('.', '_')
-    # Use index and shortened question + hash to avoid collisions
-    short_q = "".join([c if c.isalnum() else "_" for c in question[:20]])
+    short_q = "".join([c if c.isalnum() else "_" for c in question[:30]])
     q_hash = hashlib.md5(question.encode()).hexdigest()[:6]
     
     filename = f"{clean_video_id}_Q{q_idx:02d}_{short_q}_{q_hash}.png"
     save_path = os.path.join(output_dir, filename)
-    visualize_retrieval_attention(model, save_path=save_path, title=f"Q{q_idx}: {question}")
+    visualize_retrieval_attention(model, save_path=save_path, title=f"Question: {question}")
