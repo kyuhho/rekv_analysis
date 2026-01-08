@@ -58,9 +58,10 @@ class BaseVQA:
     def __init__(self, anno, save_dir, sample_fps,
                  qa_model, qa_processor=None,
                  num_chunks=None, chunk_idx=None,
-                 retrieve_size=64, chunk_size=1) -> None:
+                 retrieve_size=64, chunk_size=1, visualize=False) -> None:
         
         self.sample_fps = sample_fps
+        self.visualize = visualize
 
         self.qa_model = qa_model
         self.qa_processor = qa_processor
@@ -192,6 +193,7 @@ def work(QA_CLASS):
     parser.add_argument("--retrieve_size", type=int, default=64)
     parser.add_argument("--retrieve_chunk_size", type=int, default=1)
     parser.add_argument("--debug", type=str2bool, nargs='?', const=True, default=True)
+    parser.add_argument("--visualize", action="store_true", help="Visualize retrieval attention")
     args = parser.parse_args()
 
     if not args.debug:
@@ -230,6 +232,7 @@ def work(QA_CLASS):
         num_chunks=args.num_chunks,
         chunk_idx=args.chunk_idx,
         save_dir=args.save_dir,
+        visualize=args.visualize
     )
 
     retrieve_analyzer.analyze(debug=args.debug)

@@ -74,6 +74,10 @@ class ReKVOfflineVQA(BaseVQA):
 
             if 'question_type' in sample:
                 self.record[(self.retrieve_size, self.chunk_size)][-1]['task'] = sample['question_type']
+            
+            if self.visualize:
+                from video_qa.visualizer import wrap_and_visualize
+                wrap_and_visualize(self, video_path, question, output_dir=os.path.join(self.save_dir, "visuals"))
 
 
 if __name__ == "__main__":

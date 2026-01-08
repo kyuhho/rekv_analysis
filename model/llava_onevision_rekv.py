@@ -40,6 +40,7 @@ class LlavaOneVision_ReKV(LlavaOnevisionForConditionalGeneration, Abstract_ReKV)
 
         output_ids = []
         stopped = False
+        self.last_retrieval_info = []
 
         # NOTE: Only input the question to perform retrieval.
         input_ids = self.processor.tokenizer(input_text['question']).input_ids
@@ -58,6 +59,12 @@ class LlavaOneVision_ReKV(LlavaOnevisionForConditionalGeneration, Abstract_ReKV)
             past_key_values = out.past_key_values  # Retrieved KV-Cache: L x 2 x (B, h, N, Dh)
 
         for layer_kv in self.kv_cache:  # reset to default
+            if not hasattr(self, 'last_retrieval_info'):
+                self.last_retrieval_info = []
+            self.last_retrieval_info.append({
+                'similarity': layer_kv.similarity.detach().cpu() if layer_kv.similarity is not None else None,
+                'indices': layer_kv.retrieved_block_indices
+            })
             layer_kv.reset_retrieval()
 
         for i in range(max_new_tokens):
