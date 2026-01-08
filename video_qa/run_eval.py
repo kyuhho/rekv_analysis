@@ -24,7 +24,7 @@ def exec(cmd, sub=False, device=None):
 
 def eval_mlvu(args):
     num_chunks = args.num_chunks
-    save_dir = f"results/{args.model}/mlvu/{args.retrieve_size}-{args.sample_fps}-dropped"
+    save_dir = f"results/{args.model}/mlvu/{args.retrieve_size}-{args.sample_fps}-attn"
     solver = "rekv_offline_vqa"
     if not args.only_eval:
         # QA
@@ -40,6 +40,8 @@ def eval_mlvu(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -73,6 +75,8 @@ def eval_qaego4d(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -106,6 +110,8 @@ def eval_egoschema(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -139,6 +145,8 @@ def eval_activitynet_qa(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -173,6 +181,8 @@ def eval_rvs_ego(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -207,6 +217,8 @@ def eval_rvs_movie(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -241,6 +253,8 @@ def eval_cgbench(args):
                     "--debug", args.debug,
                     "--num_chunks", str(num_chunks),
                     "--chunk_idx", str(idx)]
+            if args.visualize:
+                cmd.append("--visualize")
             p = multiprocessing.Process(target=exec, args=(cmd, True, f'{4*idx},{4*idx+1},{4*idx+2},,{4*idx+3}' if args.model=='llava_ov_72b' else str(idx)))  # llava_ov_72b needs 4x 80GB GPUs
             processes.append(p)
             p.start()
@@ -267,6 +281,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_local", type=int, default=15000)
     parser.add_argument("--retrieve_size", type=int, default=64)
     parser.add_argument("--debug", type=str, default='false')
+    parser.add_argument("--visualize", action="store_true", help="Visualize retrieval attention")
     args = parser.parse_args()
     func_dic = {
         'mlvu': eval_mlvu,
