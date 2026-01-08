@@ -1,4 +1,5 @@
 import torch
+import os
 from logzero import logger
 
 from video_qa.base import BaseVQA, work
@@ -78,6 +79,8 @@ class ReKVOfflineVQA(BaseVQA):
             if self.visualize:
                 from video_qa.visualizer import wrap_and_visualize
                 wrap_and_visualize(self, video_path, question, output_dir=os.path.join(self.save_dir, "visuals"))
+
+            break
 
 
 if __name__ == "__main__":

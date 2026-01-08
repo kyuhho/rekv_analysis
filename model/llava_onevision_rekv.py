@@ -153,7 +153,7 @@ def load_model(model_path='model_zoo/LLaVA/llava-onevision-qwen2-7b-ov-hf',
         
         # Lower layers get 80, Upper layers get 48
         # Average is (80 + 48) / 2 = 64
-        topk = [80] * half_layers + [48] * (num_layers - half_layers)
+        topk = [64] * num_layers
         
         logger.info(f"Applied 2:1 budget allocation: Lower {half_layers} layers = 80, Upper {num_layers - half_layers} layers = 48")
 
