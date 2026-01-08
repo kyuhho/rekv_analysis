@@ -42,7 +42,7 @@ class ReKVOfflineVQA(BaseVQA):
         self.qa_model.encode_init_prompt()
         self.qa_model.encode_video(video_tensor)
 
-        for sample in video_sample['conversations']:
+        for q_idx, sample in enumerate(video_sample['conversations']):
             logger.debug(f'sample: {sample}')
             question = sample['question']
             answer = sample['answer']
@@ -78,7 +78,7 @@ class ReKVOfflineVQA(BaseVQA):
             
             if self.visualize:
                 from video_qa.visualizer import wrap_and_visualize
-                wrap_and_visualize(self, video_path, question, output_dir=os.path.join(self.save_dir, "visuals"))
+                wrap_and_visualize(self, video_path, question, q_idx=q_idx, output_dir=os.path.join(self.save_dir, "visuals"))
 
             break
 
